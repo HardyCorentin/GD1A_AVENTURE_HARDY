@@ -45,8 +45,26 @@ class Titlescreen extends Phaser.Scene {
                 }
                 preload() {
                     this.load.image("tiles","assets/ground and walls.png");
+                    
                     this.load.tilemapTiledJSON('room1', 'LD/room1.json');
-                    this.load.image("lifebar","assets/lifebar.png");
+
+                    this.load.image("attack_up","assets/attackup.png");
+
+                    this.load.image("attack_down","assets/attackdown.png");
+
+                    this.load.image("attack_right","assets/attackright.png");
+
+                    this.load.image("attack_left","assets/attackleft.png");
+
+                    this.load.image("magical stone","assets/magicalstone.png")
+                    
+                    
+                    this.load.spritesheet("lifebar","assets/life bar.png",
+                    { frameWidth: 16, frameHeight: 32 });
+                    
+                    
+                    this.load.spritesheet("Inventory","assets/inventory.png",
+                    { frameWidth: 96, frameHeight: 32 });
 
                     
                     this.load.spritesheet('hero','assets/hero.png',
@@ -59,7 +77,14 @@ class Titlescreen extends Phaser.Scene {
                         "tiles"
                     );
 
-                   
+                   this.hp=4;
+
+                   this.groupeBoule;
+
+                   this.magicstoneininventory = false;
+
+                   this.playerdash = false;
+
 
                     this.cursors = this.input.keyboard.createCursorKeys();
                     
@@ -68,28 +93,34 @@ class Titlescreen extends Phaser.Scene {
                         tileset
                     ); 
                     
-                    const walls = levelmap.createLayer(
+                    this.walls = levelmap.createLayer(
                         "walls",
                         tileset                    
                     );
-                    const obstacles  = levelmap.createLayer(
+                    this.obstacles  = levelmap.createLayer(
                         "obstacles",
                         tileset                    
                     );
+                    this.lockeddoor = levelmap.createLayer(
+                        "lockeddoor",
+                        tileset
+                    )
+                    
+                    this.magicstone = this.physics.add.image(100,470,"magical stone");
+                    
+                    this.player = this.physics.add.sprite(100, 450, 'hero',0);
+
+                   
+                    
+                    
+                    this.player.body.setSize(8,17);
+                    
                     const doors  = levelmap.createLayer(
                         "doors",
                         tileset
                     ); 
-                     
-                    
-                    this.player = this.physics.add.sprite(100, 450, 'hero',0);
-                    
-                    this.add.image(50,100,"lifebar");
-                    
-                    
-                    
-                    
-              
+                    this.player.direction
+                    this.fireOn = false
                     
                     //Animations
                     
@@ -133,7 +164,7 @@ class Titlescreen extends Phaser.Scene {
                         key: 'dashright',
                         frames: this.anims.generateFrameNumbers('hero', {start:8,end:8}),
                         frameRate: 10,
-                        repeat: -1
+                        repeat: 2
                     });
                     this.anims.create({
                         key: 'dashleft',
@@ -152,6 +183,19 @@ class Titlescreen extends Phaser.Scene {
                         this.cameras.main.startFollow(this.player); 
                         this.physics.world.setBounds(0, 0, 3000, 5000);
                         this.cameras.main.setBounds(0, 0, 3000, 5000);
+                    
+                    
+                    this.walls.setCollisionByProperty({ estSolide:true});
+                    this.physics.add.collider(this.player,this.walls);
+                    
+                    this.groupeBoule =this.physics.add.group();
+                    
+                    this.collectmagicalstone = this.physics.add.overlap(this.player, this.magicstone);
+                    
+                    
+
+                    
+                
                 }
                 update(){
                     
@@ -161,88 +205,1115 @@ class Titlescreen extends Phaser.Scene {
                 
                     this.player.body.velocity.set(0);
                 
-                
+                    this.walls.setCollisionByProperty({ estSolide:true});
+                    this.physics.add.collider(this.player,this.walls);
                 
                 
                 
                     //Déplacements
-                    if (this.cursors.left.isDown){ //si la touche gauche est appuyée
-                        this.player.setVelocityX(-160); //alors vitesse négative en X
-                        this.player.anims.play('left', true); //et animation => gauche
-                    }
-                    
-                    
-                    
+                    //Dashes
                     if (this.cursors.left.shiftKey){
                     //si touche gauche appuyée et shift aussi
-                        this.player.setVelocityX(-450);
-                        this.player.anims.play('dashleft', true); 
+                        this.player.setVelocityX(-300);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('dashleft', true);
+                        this.player.direction = "left"; 
+                        this.playerdash = true
+                    }
+                    
+                    if (this.cursors.up.shiftKey){
+                    //si touche haut appuyée et shift aussi
+                        this.player.setVelocityY(-300);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('dashup', true);
+                        this.player.direction = "up";
+                        this.playerdash = true
+                    }
+
+                    if (this.cursors.down.shiftKey){
+                        //si touche bas appuyée et shift aussi
+                        
+                        this.player.setVelocityY(300);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('dashdown', true);
+                        this.player.direction = "down";
+                        this.playerdash = true;
+                    }
+
+                    if (this.cursors.right.shiftKey){
+                    //si touche gauche appuyée et shift aussi
+                        this.player.setVelocityX(300);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('dashright', true);
+                        this.player.direction = "right";
+                        this.playerdash = true;
+                    }
+
+                    //Déplacement normaux
+                    if (this.cursors.left.isDown){ //si la touche gauche est appuyée
+                        this.player.setVelocityX(-160); //alors vitesse négative en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('left', true); //et animation => gauche
+                        this.player.direction = "left"
+                        this.playerdash = false;
                     }
                     
                     
                     
-                    else if (this.cursors.right.isDown){ //sinon si la touche droite est appuyée
+                    
+                    
+                    
+                    
+                    if (this.cursors.right.isDown){ //sinon si la touche droite est appuyée
                         this.player.setVelocityX(160); //alors vitesse positive en X
+                        this.player.setVelocityY(0);
                         this.player.anims.play('right', true); //et animation => droite
+                        this.player.direction = "right";
+                        this.playerdash = false;
                     }
                     
                     
                     
-                    else if (this.cursors.right.shiftKey){
-                    //si touche droite appuyée et shift aussi
-                        this.player.setVelocityX(450);
-                        this.player.anims.play('dashright', true); 
-                    }
+                    
                     
                     
                     
                     if (this.cursors.up.isDown){
                     //si touche haut appuyée
                         this.player.setVelocityY(-160);
+                        this.player.setVelocityX(0);
                         this.player.anims.play('up', true); //alors vitesse verticale négative
-                    //(on saute)
+                        this.player.direction = "up";
+                        this.playerdash = false;
                     }
                     
                     
                     
-                    else if (this.cursors.up.shiftKey){
-                    //si touche haut appuyée et shift aussi
-                        this.player.setVelocityY(-450);
-                        this.player.anims.play('dashup', true); 
-                    }
+                    
                     
                     
                     if (this.cursors.down.isDown){
                     //si touche bas appuyée
                         this.player.setVelocityY(160);
+                        this.player.setVelocityX(0);
                         this.player.anims.play('down', true); //alors vitesse verticale négative
+                        this.player.direction = "down";
+                        this.playerdash = false;
+                    
+                    }
+                    if (this.cursors.space.isDown){
+                       
+                        
+                        this.tirer();
+                    
+                    }
+                        
+
+                    
+                    else if(this.cursors.down.isUp && this.cursors.up.isUp && this.cursors.left.isUp && this.cursors.right.isUp && this.cursors.shift.isUp){
+                        this.player.setVelocityX(0);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('turn', true);
                     
                     }
                     
                     
-                    else if (this.cursors.down.shiftKey){
-                        //si touche bas appuyée et shift aussi
-                        this.player.setVelocityY(450);
-                        this.player.anims.play('dashdown', true);
+                    
+                    if (this.playerdash==false){
+                        this.obstacles.setCollisionByProperty({ trou: true});
+                        this.physics.add.collider(this.player,this.obstacles);
                     }
+                    else if(this.playerdash==true){
+                        this.obstacles.setCollisionByProperty({trou : false});
+                        this.physics.world.colliders.destroy(this.player,this.obstacles);
+
+                    if( this.collectmagicalstone==true){
+                        this.magicstoneininventory = true;
+                        console.log("magic")
+
+
+
+                    }
+
+
+
+
+                    }//Etat du sablier suivant la barre de vie
+                    if(this.hp==4){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",0).setScale(2);
+                            this.barrevie.setInteractive();
+                            this.barrevie.setScrollFactor(0);
+                        }
+                    else if(this.hp==3){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",1).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                
+                
+                    }
+                    else if(this.hp==2){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",2).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                
+                
+                    }
+                    else if(this.hp==1){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",3).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                    }
+                    else if(this.hp==0){
+                        this.scene.start("gameOver")
+                
+                
+                    }//Si on a plus de vie, le Game Over se lance
+                
+                
+                    //
+                    //Positionement de l'inventaire
+                    this.barreInventaire = this.add.sprite(800, 450,'Inventory',0).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    if(this.magicstoneininventory == false){
+                        this.barreInventaire = this.add.sprite(800, 450,'Inventory',0).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    }
+                    if(this.magicstoneininventory == true){
+                        this.barreInventaire = this.add.sprite(800, 450,'Inventory',1).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    }
+                    
+                    if (this.player.y > 980){
+                        this.scene.start("room2");
+
+                    }
+                   
                     
                     
                     
                     
 
             }
+            tirer() {
+                
+                this.windblade;
+                this.fireOn == true;
+                
+
+                
+                if (this.player.direction == "left") { 
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x - 25, this.player.y - 4, "attack_left");
+                    this.windblade.setVelocity(-400,0);
+                }
+                if (this.player.direction == "right") {
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x + 25, this.player.y - 4, "attack_right"); 
+                    this.windblade.setVelocity(400,0);
+                }
+                if (this.player.direction == "up") {
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x, this.player.y - 4, "attack_up");
+                    this.windblade.setVelocity(0,-400);
+                }
+                if (this.player.direction == "down") { 
+                    
+                    this.windblade = this.groupeBoule.create(this.player.x, this.player.y - 4, "attack_down");
+                    this.windblade.setVelocity(0,400);
+                }
+                
+            }
+
+}
             
-            
-        }
+        
+        class room2 extends Phaser.Scene {
+                constructor() {
+                    super("room2");
+                }
+                preload(){
+
+                    this.load.image("tiles","assets/ground and walls.png");
+                    
+                    this.load.tilemapTiledJSON('room2', 'LD/room2.json');
+                    
+                    this.load.image("attack_up","assets/attackup.png");
+
+                    this.load.image("attack_down","assets/attackdown.png");
+
+                    this.load.image("attack_right","assets/attackright.png");
+
+                    this.load.image("attack_left","assets/attackleft.png");
+
+                   
+                    
+                    
+                    this.load.spritesheet("lifebar","assets/life bar.png",
+                    { frameWidth: 16, frameHeight: 32 });
+                    
+                    
+                    this.load.spritesheet("Inventory","assets/inventory.png",
+                    { frameWidth: 96, frameHeight: 32 });
+
+                    
+                    this.load.spritesheet('hero','assets/hero.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                    this.load.spritesheet("monster","assets/monster.png",
+                    {frameWidth:32, frameHeight:32});
+                    this.load.spritesheet("boss","assets/boss.png",
+                    { frameWidth:64, frameHeight:64});
+                }
+                    
+                create(){
+                    
+                    const levelmap = this.add.tilemap("room2");
+                    const tileset = levelmap.addTilesetImage(
+                        "ground and walls",
+                        "tiles"
+                    );
+
+                   this.hp=4;
+
+                   this.groupeBoule;
+                   this.monstermovementdirection
+                   this.magicstoneininventory = false;
+
+                   this.playerdash = false;
+
+
+                    this.cursors = this.input.keyboard.createCursorKeys();
+                    
+                    const ground  = levelmap.createLayer(
+                        "ground",
+                        tileset
+                    ); 
+                    
+                    this.walls = levelmap.createLayer(
+                        "walls",
+                        tileset                    
+                    );
+                    this.obstacles  = levelmap.createLayer(
+                        "obstacles",
+                        tileset                    
+                    );
+                    this.lockeddoor = levelmap.createLayer(
+                        "lockeddoor",
+                        tileset
+                    )
+                    
+                    
+                    this.player = this.physics.add.sprite(590, 20, 'hero',0);
+
+                    this.monster1 = this.physics.add.sprite(500,100,"monster",0);
+
+                    this.boss = this.physics.add.sprite(100,450,"boss",0);
+
+                   
+                    
+                    
+                    this.player.body.setSize(8,17);
+                    
+                    const doors  = levelmap.createLayer(
+                        "doors",
+                        tileset
+                    ); 
+                    this.player.direction
+                    this.fireOn = false
+                    
+                    //Animations
+                    
+                    this.anims.create({
+                    key: 'left',
+                    frames: this.anims.generateFrameNumbers('hero', {start:14,end:17}),
+                    frameRate: 10,
+                    repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'turn',
+                        frames: this.anims.generateFrameNumbers('hero', {start:0,end:3}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'right',
+                        frames: this.anims.generateFrameNumbers('hero', {start:4,end:7}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'down',
+                        frames: this.anims.generateFrameNumbers('hero', {start:9,end:12}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'up',
+                        frames: this.anims.generateFrameNumbers('hero', {start:19,end:22}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'dashup',
+                        frames: this.anims.generateFrameNumbers('hero', {start:23,end:23}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'dashright',
+                        frames: this.anims.generateFrameNumbers('hero', {start:8,end:8}),
+                        frameRate: 10,
+                        repeat: 2
+                    });
+                    this.anims.create({
+                        key: 'dashleft',
+                        frames: this.anims.generateFrameNumbers('hero', {start:18,end:18}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'dashdown',
+                        frames: this.anims.generateFrameNumbers('hero', {start:13,end:13}),
+                        frameRate: 10,
+                        repeat: -1
+                    });//Fin Animations du hero
+                //Animations monstre
+                this.anims.create({
+                        key: 'monsterdown',
+                        frames: this.anims.generateFrameNumbers('monster', {start:0,end:3}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'monsterup',
+                        frames: this.anims.generateFrameNumbers('monster', {start:8,end:11}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'monsterright',
+                        frames: this.anims.generateFrameNumbers('monster', {start:4,end:7}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'monsterleft',
+                        frames: this.anims.generateFrameNumbers('monster', {start:12,end:15}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    //Fin animation monstre
+                    //Debut animation boss
+                    this.anims.create({
+                        key: 'bossup',
+                        frames: this.anims.generateFrameNumbers('boss', {start:4,end:6}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'bossdown',
+                        frames: this.anims.generateFrameNumbers('boss', {start:0,end:3}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    //Fin animation boss
+                //Fin Animations
+                    this.cameras.main.zoom = 3
+                        this.cameras.main.startFollow(this.player); 
+                        this.physics.world.setBounds(0, 0, 3000, 5000);
+                        this.cameras.main.setBounds(0, 0, 3000, 5000);
+                    
+                    
+                    this.walls.setCollisionByProperty({ estSolide:true});
+                    this.physics.add.collider(this.player,this.walls);
+                    this.physics.add.collider(this.monster1,this.walls);
+                    this.physics.add.collider(this.monster1,this.obstacles);
+                    
+                    this.groupeBoule =this.physics.add.group();              
+                    
+
+                    
+                
+                }
+                update(){
+                    
+                    
+                    this.monstermovementdirection = 0;
+                    
+                
+                    this.player.body.velocity.set(0);
+                
+                    this.walls.setCollisionByProperty({ estSolide:true});
+                    this.physics.add.collider(this.player,this.walls);
+                    if(this.monstermovementdirection ==0){
+                        this.monster1.setVelocityX(-170)
+                        this.monster1.setVelocityY(0);
+                        this.monster1.anims.play("monsterleft",true);
+                    }
+                    if(this.monstermovementdirection==1){
+                        this.monster1.setVelocityX(170)
+                        this.monster1.setVelocityY(0);
+                        this.monster1.anims.play("monsterright",true);
+                    }
+                    if(this.monstermovementdirection==2){
+                        this.monster1.setVelocityX(0)
+                        this.monster1.setVelocityY(-170);
+                        this.monster1.anims.play("monsterup",true);
+                    }
+                    if(this.monstermovementdirection==3){
+                        this.monster1.setVelocityX(0)
+                        this.monster1.setVelocityY(170);
+                        this.monster1.anims.play("monsterdown",true);
+                    }
+                
+                
+                    //Déplacements
+                    //Dashes
+                    if (this.cursors.left.shiftKey){
+                    //si touche gauche appuyée et shift aussi
+                        this.player.setVelocityX(-300);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('dashleft', true);
+                        this.player.direction = "left"; 
+                        this.playerdash = true
+                    }
+                    
+                    if (this.cursors.up.shiftKey){
+                    //si touche haut appuyée et shift aussi
+                        this.player.setVelocityY(-300);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('dashup', true);
+                        this.player.direction = "up";
+                        this.playerdash = true
+                    }
+
+                    if (this.cursors.down.shiftKey){
+                        //si touche bas appuyée et shift aussi
+                        
+                        this.player.setVelocityY(300);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('dashdown', true);
+                        this.player.direction = "down";
+                        this.playerdash = true;
+                    }
+
+                    if (this.cursors.right.shiftKey){
+                    //si touche gauche appuyée et shift aussi
+                        this.player.setVelocityX(300);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('dashright', true);
+                        this.player.direction = "right";
+                        this.playerdash = true;
+                    }
+
+                    //Déplacement normaux
+                    if (this.cursors.left.isDown){ //si la touche gauche est appuyée
+                        this.player.setVelocityX(-160); //alors vitesse négative en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('left', true); //et animation => gauche
+                        this.player.direction = "left"
+                        this.playerdash = false;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (this.cursors.right.isDown){ //sinon si la touche droite est appuyée
+                        this.player.setVelocityX(160); //alors vitesse positive en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('right', true); //et animation => droite
+                        this.player.direction = "right";
+                        this.playerdash = false;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (this.cursors.up.isDown){
+                    //si touche haut appuyée
+                        this.player.setVelocityY(-160);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('up', true); //alors vitesse verticale négative
+                        this.player.direction = "up";
+                        this.playerdash = false;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (this.cursors.down.isDown){
+                    //si touche bas appuyée
+                        this.player.setVelocityY(160);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('down', true); //alors vitesse verticale négative
+                        this.player.direction = "down";
+                        this.playerdash = false;
+                    
+                    }
+                    if (this.cursors.space.isDown){
+                       
+                        
+                        this.tirer();
+                    
+                    }
+                        
+
+                    
+                    else if(this.cursors.down.isUp && this.cursors.up.isUp && this.cursors.left.isUp && this.cursors.right.isUp && this.cursors.shift.isUp){
+                        this.player.setVelocityX(0);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('turn', true);
+                    
+                    }
+                    
+                    
+                    
+                    if (this.playerdash==false){
+                        this.obstacles.setCollisionByProperty({ trou: true});
+                        this.physics.add.collider(this.player,this.obstacles);
+                    }
+                    else if(this.playerdash==true){
+                        this.obstacles.setCollisionByProperty({trou : false});
+                        this.physics.world.colliders.destroy(this.player,this.obstacles);
+
+                    if( this.collectmagicalstone==true){
+                        this.magicstoneininventory = true;
+                        console.log("magic")
+
+
+
+                    }
+
+
+
+
+                    }//Etat du sablier suivant la barre de vie
+                    if(this.hp==4){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",0).setScale(2);
+                            this.barrevie.setInteractive();
+                            this.barrevie.setScrollFactor(0);
+                        }
+                    else if(this.hp==3){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",1).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                
+                
+                    }
+                    else if(this.hp==2){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",2).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                
+                
+                    }
+                    else if(this.hp==1){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",3).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                    }
+                    else if(this.hp==0){
+                        this.scene.start("gameOver")
+                
+                
+                    }//Si on a plus de vie, le Game Over se lance
+                
+                
+                    //
+                    //Positionement de l'inventaire
+                    this.barreInventaire = this.add.sprite(800, 450,'Inventory',0).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    if(this.magicstoneininventory == false){
+                        this.barreInventaire = this.add.sprite(800, 450,'Inventory',0).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    }
+                    if(this.magicstoneininventory == true){
+                        this.barreInventaire = this.add.sprite(800, 450,'Inventory',1).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    }
+                    
+                    if (this.player.y < 10){
+                        this.scene.start("room1redo");
+
+                    }
+                   
+                    
+                    
+                    
+                    
+
+            }
+            tirer() {
+                
+                this.windblade;
+                this.fireOn == true;
+                
+
+                
+                if (this.player.direction == "left") { 
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x - 25, this.player.y - 4, "attack_left");
+                    this.windblade.setVelocity(-400,0);
+                }
+                if (this.player.direction == "right") {
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x + 25, this.player.y - 4, "attack_right"); 
+                    this.windblade.setVelocity(400,0);
+                }
+                if (this.player.direction == "up") {
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x, this.player.y - 4, "attack_up");
+                    this.windblade.setVelocity(0,-400);
+                }
+                if (this.player.direction == "down") { 
+                    
+                    this.windblade = this.groupeBoule.create(this.player.x, this.player.y - 4, "attack_down");
+                    this.windblade.setVelocity(0,400);
+                }
+                
+            }
+
+}
+class room1redo extends Phaser.Scene {
+                constructor() {
+                    super("room1redo");
+                }
+                preload() {
+                    this.load.image("tiles","assets/ground and walls.png");
+                    
+                    this.load.tilemapTiledJSON('room1', 'LD/room1.json');
+
+                    this.load.image("attack_up","assets/attackup.png");
+
+                    this.load.image("attack_down","assets/attackdown.png");
+
+                    this.load.image("attack_right","assets/attackright.png");
+
+                    this.load.image("attack_left","assets/attackleft.png");
+
+                    this.load.image("magical stone","assets/magicalstone.png")
+                    
+                    
+                    this.load.spritesheet("lifebar","assets/life bar.png",
+                    { frameWidth: 16, frameHeight: 32 });
+                    
+                    
+                    this.load.spritesheet("Inventory","assets/inventory.png",
+                    { frameWidth: 96, frameHeight: 32 });
+
+                    
+                    this.load.spritesheet('hero','assets/hero.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                }
+                create(){
+                    const levelmap = this.add.tilemap("room1");
+                    const tileset = levelmap.addTilesetImage(
+                        "ground and walls",
+                        "tiles"
+                    );
+
+                   this.hp=4;
+
+                   this.groupeBoule;
+
+                   this.magicstoneininventory = false;
+
+                   this.playerdash = false;
+
+
+                    this.cursors = this.input.keyboard.createCursorKeys();
+                    
+                    const ground  = levelmap.createLayer(
+                        "ground",
+                        tileset
+                    ); 
+                    
+                    this.walls = levelmap.createLayer(
+                        "walls",
+                        tileset                    
+                    );
+                    this.obstacles  = levelmap.createLayer(
+                        "obstacles",
+                        tileset                    
+                    );
+                    this.lockeddoor = levelmap.createLayer(
+                        "lockeddoor",
+                        tileset
+                    )
+                    
+                    this.magicstone = this.physics.add.image(100,470,"magical stone");
+                    
+                    this.player = this.physics.add.sprite(460, 970, 'hero',0);
+
+                   
+                    
+                    
+                    this.player.body.setSize(8,17);
+                    
+                    const doors  = levelmap.createLayer(
+                        "doors",
+                        tileset
+                    ); 
+                    this.player.direction
+                    this.fireOn = false
+                    
+                    //Animations
+                    
+                    this.anims.create({
+                    key: 'left',
+                    frames: this.anims.generateFrameNumbers('hero', {start:14,end:17}),
+                    frameRate: 10,
+                    repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'turn',
+                        frames: this.anims.generateFrameNumbers('hero', {start:0,end:3}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'right',
+                        frames: this.anims.generateFrameNumbers('hero', {start:4,end:7}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'down',
+                        frames: this.anims.generateFrameNumbers('hero', {start:9,end:12}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'up',
+                        frames: this.anims.generateFrameNumbers('hero', {start:19,end:22}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'dashup',
+                        frames: this.anims.generateFrameNumbers('hero', {start:23,end:23}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'dashright',
+                        frames: this.anims.generateFrameNumbers('hero', {start:8,end:8}),
+                        frameRate: 10,
+                        repeat: 2
+                    });
+                    this.anims.create({
+                        key: 'dashleft',
+                        frames: this.anims.generateFrameNumbers('hero', {start:18,end:18}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    this.anims.create({
+                        key: 'dashdown',
+                        frames: this.anims.generateFrameNumbers('hero', {start:13,end:13}),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                //Fin Animations
+                    this.cameras.main.zoom = 3
+                        this.cameras.main.startFollow(this.player); 
+                        this.physics.world.setBounds(0, 0, 3000, 5000);
+                        this.cameras.main.setBounds(0, 0, 3000, 5000);
+                    
+                    
+                    this.walls.setCollisionByProperty({ estSolide:true});
+                    this.physics.add.collider(this.player,this.walls);
+                    
+                    this.groupeBoule =this.physics.add.group();
+                    
+                    this.collectmagicalstone = this.physics.add.overlap(this.player, this.magicstone);
+                    
+                    
+
+                    
+                
+                }
+                update(){
+                    
+                    
+                    
+                    
+                
+                    this.player.body.velocity.set(0);
+                
+                    this.walls.setCollisionByProperty({ estSolide:true});
+                    this.physics.add.collider(this.player,this.walls);
+                
+                
+                
+                    //Déplacements
+                    //Dashes
+                    if (this.cursors.left.shiftKey){
+                    //si touche gauche appuyée et shift aussi
+                        this.player.setVelocityX(-300);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('dashleft', true);
+                        this.player.direction = "left"; 
+                        this.playerdash = true
+                    }
+                    
+                    if (this.cursors.up.shiftKey){
+                    //si touche haut appuyée et shift aussi
+                        this.player.setVelocityY(-300);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('dashup', true);
+                        this.player.direction = "up";
+                        this.playerdash = true
+                    }
+
+                    if (this.cursors.down.shiftKey){
+                        //si touche bas appuyée et shift aussi
+                        
+                        this.player.setVelocityY(300);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('dashdown', true);
+                        this.player.direction = "down";
+                        this.playerdash = true;
+                    }
+
+                    if (this.cursors.right.shiftKey){
+                    //si touche gauche appuyée et shift aussi
+                        this.player.setVelocityX(300);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('dashright', true);
+                        this.player.direction = "right";
+                        this.playerdash = true;
+                    }
+
+                    //Déplacement normaux
+                    if (this.cursors.left.isDown){ //si la touche gauche est appuyée
+                        this.player.setVelocityX(-160); //alors vitesse négative en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('left', true); //et animation => gauche
+                        this.player.direction = "left"
+                        this.playerdash = false;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (this.cursors.right.isDown){ //sinon si la touche droite est appuyée
+                        this.player.setVelocityX(160); //alors vitesse positive en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('right', true); //et animation => droite
+                        this.player.direction = "right";
+                        this.playerdash = false;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (this.cursors.up.isDown){
+                    //si touche haut appuyée
+                        this.player.setVelocityY(-160);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('up', true); //alors vitesse verticale négative
+                        this.player.direction = "up";
+                        this.playerdash = false;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (this.cursors.down.isDown){
+                    //si touche bas appuyée
+                        this.player.setVelocityY(160);
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('down', true); //alors vitesse verticale négative
+                        this.player.direction = "down";
+                        this.playerdash = false;
+                    
+                    }
+                    if (this.cursors.space.isDown){
+                       
+                        
+                        this.tirer();
+                    
+                    }
+                        
+
+                    
+                    else if(this.cursors.down.isUp && this.cursors.up.isUp && this.cursors.left.isUp && this.cursors.right.isUp && this.cursors.shift.isUp){
+                        this.player.setVelocityX(0);
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('turn', true);
+                    
+                    }
+                    
+                    
+                    
+                    if (this.playerdash==false){
+                        this.obstacles.setCollisionByProperty({ trou: true});
+                        this.physics.add.collider(this.player,this.obstacles);
+                    }
+                    else if(this.playerdash==true){
+                        this.obstacles.setCollisionByProperty({trou : false});
+                        this.physics.world.colliders.destroy(this.player,this.obstacles);
+
+                    if( this.collectmagicalstone==true){
+                        this.magicstoneininventory = true;
+                        console.log("magic")
+
+
+
+                    }
+
+
+
+
+                    }//Etat du sablier suivant la barre de vie
+                    if(this.hp==4){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",0).setScale(2);
+                            this.barrevie.setInteractive();
+                            this.barrevie.setScrollFactor(0);
+                        }
+                    else if(this.hp==3){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",1).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                
+                
+                    }
+                    else if(this.hp==2){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",2).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                
+                
+                    }
+                    else if(this.hp==1){
+                        this.barrevie = this.add.sprite(450,450,"lifebar",3).setScale(2);
+                        this.barrevie.setInteractive();
+                        this.barrevie.setScrollFactor(0);
+                    }
+                    else if(this.hp==0){
+                        this.scene.start("gameOver")
+                
+                
+                    }//Si on a plus de vie, le Game Over se lance
+                
+                
+                    //
+                    //Positionement de l'inventaire
+                    this.barreInventaire = this.add.sprite(800, 450,'Inventory',0).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    if(this.magicstoneininventory == false){
+                        this.barreInventaire = this.add.sprite(800, 450,'Inventory',0).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    }
+                    if(this.magicstoneininventory == true){
+                        this.barreInventaire = this.add.sprite(800, 450,'Inventory',1).setScale(1);
+                        this.barreInventaire.setInteractive();
+                        this.barreInventaire.setScrollFactor(0);
+                    }
+                    
+                    if (this.player.y > 980){
+                        this.scene.start("room2");
+
+                    }
+                   
+                    
+                    
+                    
+                    
+
+            }
+            tirer() {
+                
+                this.windblade;
+                this.fireOn == true;
+                
+
+                
+                if (this.player.direction == "left") { 
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x - 25, this.player.y - 4, "attack_left");
+                    this.windblade.setVelocity(-400,0);
+                }
+                if (this.player.direction == "right") {
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x + 25, this.player.y - 4, "attack_right"); 
+                    this.windblade.setVelocity(400,0);
+                }
+                if (this.player.direction == "up") {
+                    console.log("bygzu")
+                    this.windblade = this.groupeBoule.create(this.player.x, this.player.y - 4, "attack_up");
+                    this.windblade.setVelocity(0,-400);
+                }
+                if (this.player.direction == "down") { 
+                    
+                    this.windblade = this.groupeBoule.create(this.player.x, this.player.y - 4, "attack_down");
+                    this.windblade.setVelocity(0,400);
+                }
+                
+            }
+
+}                   
+                
+            class gameOver extends Phaser.Scene {
+                    constructor() {
+                        super('gameOver');
+                    }
+
+                    preload(){
+                        this.load.image('gameOver', 'assets/gameOver.png');
+
+                    }
+
+                    create(){
+                        
+                        this.add.image(640, 360, 'gameOver');
+                        
+
+                      this.cursors = this.input.keyboard.createCursorKeys();
+
+                    }
+
+                    update(){
+
+                        if (this.cursors.space.isDown){
+                            this.scene.start("Titlescreen");
+                        }
+
+                    }
+                }
             var config = {
             type: Phaser.AUTO,
             width: 1280, height: 720,
+            pixelArt:true,
             physics: {
             default: 'arcade',
             arcade: {
             debug: false
             }},
-            scene : [Titlescreen,room1]
+            scene : [Titlescreen,room1,room2,room1redo,gameOver]
             
             };
             new Phaser.Game(config);
@@ -257,7 +1328,11 @@ class Titlescreen extends Phaser.Scene {
 
                 
                 
-            //}
+            
     </script>
 </body>
 </html>
+
+
+                    
+               
