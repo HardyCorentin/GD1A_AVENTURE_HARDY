@@ -56,8 +56,9 @@ class Titlescreen extends Phaser.Scene {
 
                     this.load.image("attack_left","assets/attackleft.png");
 
-                    this.load.image("magical stone","assets/magicalstone.png")
+                    this.load.image("magical stone","assets/magicalstone.png");
                     
+                    this.load.image("stone tablet","assets/stonetablet.png");
                     
                     this.load.spritesheet("lifebar","assets/life bar.png",
                     { frameWidth: 16, frameHeight: 32 });
@@ -105,11 +106,13 @@ class Titlescreen extends Phaser.Scene {
                         "lockeddoor",
                         tileset
                     )
-                    
+                    this.stonetablet = this.physics.add.image(70,850,"stone tablet");
+
                     this.magicstone = this.physics.add.image(100,470,"magical stone");
                     
                     this.player = this.physics.add.sprite(100, 450, 'hero',0);
 
+                    
                    
                     
                     
