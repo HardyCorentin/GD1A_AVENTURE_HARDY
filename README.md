@@ -1,8 +1,8 @@
 # GD1A_AVENTURE_HARDY
 
 Code :
-  - Character : abilities : 1st dash
-                            2nd
+  - Character : abilities : 1st dash(shift + direction)
+                            2nd windblade(spacebar)
                       
                         
   - Title screen creation : play button
@@ -10,7 +10,7 @@ Code :
   - Inventory
   
   
-  - Controls : up key, right key, left key, down key + check how to get controller input
+  - Controls : up key, right key, left key, down key
 
 2D : Character animations
     Title card
@@ -23,7 +23,7 @@ Code :
       Part 4 : game Over
       
       
- DA
+
  
   
   
