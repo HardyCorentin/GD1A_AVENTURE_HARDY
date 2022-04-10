@@ -17,13 +17,10 @@ Code :
     Map : desert
     Inventory
     
- LD : Part 1 : Village
-      Part 2 : Desert
-      Part 3 : Ruins
-      Part4 : Deeper ruins
-      Part 5 : Exit the ruins by another way that the one you entered
-      Part 6 : Back to the desert (but with new ennemis due to what you did in the ruins
-      Part 7 : Fight a few monsters in the village
+ LD : Part 1 :Titlescreen
+      Part 2 : Room1
+      Part 3 : Room2
+      Part 4 : game Over
       
       
  DA
